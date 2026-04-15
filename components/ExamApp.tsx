@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Question, Answer, ExamState, Certification } from "@/lib/types";
 import { certifications } from "@/lib/certifications";
+import type { SyncPayload } from "@/lib/sync";
 import {
   ChevronLeft,
   ChevronRight,
@@ -68,6 +69,11 @@ export default function ExamApp() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showNav, setShowNav] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
+  const [syncCode, setSyncCode] = useState<string | null>(null);
+  const [syncInput, setSyncInput] = useState("");
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const hasRestoredRef = useRef(false);
 
   const totalQuestions = activeCert?.totalQuestions ?? 50;
   const examTime = activeCert?.id === "aws-clp" ? 5400 : 7200;
@@ -87,6 +93,114 @@ export default function ExamApp() {
     }, 1000);
     return () => clearInterval(interval);
   }, [timerActive]);
+
+  // ── Auto-save to localStorage ──
+  useEffect(() => {
+    if (state !== "exam" || !activeCert || !selectedExamId) return;
+    const data: SyncPayload = {
+      certId: activeCert.id,
+      examId: selectedExamId,
+      currentIndex,
+      answers: Array.from(answers.entries()),
+      flagged: Array.from(flagged),
+      timeLeft,
+      questionIds: examQuestions.map((q) => q.id),
+      createdAt: Date.now(),
+    };
+    localStorage.setItem("cloud-exams-session", JSON.stringify(data));
+  }, [state, activeCert, selectedExamId, currentIndex, answers, flagged, timeLeft, examQuestions]);
+
+  // ── Restore from localStorage on mount ──
+  useEffect(() => {
+    if (hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+    try {
+      const raw = localStorage.getItem("cloud-exams-session");
+      if (!raw) return;
+      const data: SyncPayload = JSON.parse(raw);
+      if (Date.now() - data.createdAt > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem("cloud-exams-session");
+        return;
+      }
+      restoreSession(data);
+    } catch { /* ignore */ }
+  }, []);
+
+  function restoreSession(data: SyncPayload) {
+    const cert = certifications.find((c) => c.id === data.certId);
+    if (!cert) return;
+    const exam = cert.exams.find((e) => e.id === data.examId);
+    if (!exam) return;
+    const questionMap = new Map(exam.questions.map((q) => [q.id, q]));
+    const restored = data.questionIds.map((id) => questionMap.get(id)).filter(Boolean) as Question[];
+    if (restored.length === 0) return;
+    setActiveCert(cert);
+    setSelectedExamId(data.examId);
+    setExamQuestions(restored);
+    setCurrentIndex(data.currentIndex);
+    setAnswers(new Map(data.answers));
+    setFlagged(new Set(data.flagged));
+    setTimeLeft(data.timeLeft);
+    setState("exam");
+    setTimerActive(true);
+  }
+
+  const generateSyncCode = useCallback(async () => {
+    if (!activeCert || !selectedExamId) return;
+    setSyncLoading(true);
+    setSyncError(null);
+    try {
+      const payload: SyncPayload = {
+        certId: activeCert.id,
+        examId: selectedExamId,
+        currentIndex,
+        answers: Array.from(answers.entries()),
+        flagged: Array.from(flagged),
+        timeLeft,
+        questionIds: examQuestions.map((q) => q.id),
+        createdAt: Date.now(),
+      };
+      const res = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.code) {
+        setSyncCode(data.code);
+      } else {
+        setSyncError("Failed to generate code");
+      }
+    } catch {
+      setSyncError("Network error");
+    } finally {
+      setSyncLoading(false);
+    }
+  }, [activeCert, selectedExamId, currentIndex, answers, flagged, timeLeft, examQuestions]);
+
+  const loadFromSyncCode = useCallback(async (code: string) => {
+    setSyncLoading(true);
+    setSyncError(null);
+    try {
+      const res = await fetch(`/api/sync/${code.toUpperCase().trim()}`);
+      if (!res.ok) {
+        setSyncError("Session not found or expired");
+        return;
+      }
+      const data: SyncPayload = await res.json();
+      restoreSession(data);
+      localStorage.setItem("cloud-exams-session", JSON.stringify(data));
+      setSyncInput("");
+    } catch {
+      setSyncError("Network error");
+    } finally {
+      setSyncLoading(false);
+    }
+  }, []);
+
+  const clearSavedSession = useCallback(() => {
+    localStorage.removeItem("cloud-exams-session");
+  }, []);
 
   const selectCert = useCallback((cert: Certification) => {
     setActiveCert(cert);
@@ -116,14 +230,17 @@ export default function ExamApp() {
   const endExam = useCallback(() => {
     setTimerActive(false);
     setState("results");
-  }, []);
+    clearSavedSession();
+  }, [clearSavedSession]);
 
   const goHome = useCallback(() => {
     setTimerActive(false);
     setState("home");
     setActiveCert(null);
     setShowExplanation(false);
-  }, []);
+    setSyncCode(null);
+    clearSavedSession();
+  }, [clearSavedSession]);
 
   const goToSelect = useCallback(() => {
     setTimerActive(false);
@@ -244,6 +361,31 @@ export default function ExamApp() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Resume from another device */}
+          <div className="mt-6 bg-white border border-[#dadce0] rounded-lg p-5">
+            <h3 className="text-sm font-medium text-[#202124] mb-3 flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-[#5f6368]" /> Continue on this device
+            </h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={syncInput}
+                onChange={(e) => { setSyncInput(e.target.value.toUpperCase()); setSyncError(null); }}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className="flex-1 border border-[#dadce0] rounded px-3 py-2 text-sm text-center tracking-[0.3em] font-mono uppercase focus:outline-none focus:border-[#1a73e8]"
+              />
+              <button
+                onClick={() => syncInput.length === 6 && loadFromSyncCode(syncInput)}
+                disabled={syncInput.length !== 6 || syncLoading}
+                className="bg-[#1a73e8] text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+              >
+                {syncLoading ? "..." : "Resume"}
+              </button>
+            </div>
+            {syncError && <p className="text-xs text-[#ea4335] mt-2">{syncError}</p>}
           </div>
 
           <p className="text-center text-xs text-[#80868b] mt-8">
@@ -518,6 +660,25 @@ export default function ExamApp() {
               <Clock className="w-4 h-4" />
               {formatTime(timeLeft)}
             </div>
+          )}
+          {!isReview && (
+            syncCode ? (
+              <div className="flex items-center gap-1.5 bg-[#e8f0fe] rounded px-3 py-1.5">
+                <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#1a73e8]">{syncCode}</span>
+                <button onClick={() => { navigator.clipboard?.writeText(syncCode); }} className="text-[#1a73e8] hover:text-[#174ea6]">
+                  <FileText className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={generateSyncCode}
+                disabled={syncLoading}
+                className="text-xs bg-[#f1f3f4] hover:bg-[#e8eaed] rounded px-3 py-1.5 text-[#3c4043] transition-colors"
+                title="Generate code to continue on another device"
+              >
+                {syncLoading ? "..." : "Sync"}
+              </button>
+            )
           )}
           <button onClick={() => setShowNav(!showNav)} className="text-xs bg-[#f1f3f4] hover:bg-[#e8eaed] rounded px-3 py-1.5 text-[#3c4043] transition-colors">
             Questions
