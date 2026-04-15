@@ -189,7 +189,8 @@ export default function ExamApp() {
   }, [examQuestions, isCorrectAnswer]);
 
   const answeredCount = answers.size;
-  const percentage = Math.round((score / totalQuestions) * 100);
+  const actualQuestionCount = examQuestions.length || totalQuestions;
+  const percentage = Math.round((score / actualQuestionCount) * 100);
   const passed = percentage >= 70;
   const selectedExam = activeCert?.exams.find((e) => e.id === selectedExamId);
 
@@ -412,7 +413,7 @@ export default function ExamApp() {
                   {passed ? "Congratulations! You passed!" : "You did not pass this time"}
                 </h1>
                 <p className="text-sm text-[#5f6368] mt-1">
-                  {selectedExam?.name} — Score: {score}/{totalQuestions} ({percentage}%) — Passing: {activeCert?.passingScore}
+                  {selectedExam?.name} — Score: {score}/{actualQuestionCount} ({percentage}%) — Passing: {activeCert?.passingScore}
                 </p>
               </div>
             </div>
@@ -508,7 +509,7 @@ export default function ExamApp() {
             {isReview ? "Review Mode" : selectedExam?.name}
           </span>
           <span className="text-xs text-[#5f6368] bg-[#f1f3f4] rounded-full px-3 py-1">
-            {currentIndex + 1} / {totalQuestions}
+            {currentIndex + 1} / {actualQuestionCount}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -523,7 +524,7 @@ export default function ExamApp() {
           </button>
           {!isReview ? (
             <button
-              onClick={() => { if (window.confirm(`Submit? Answered ${answeredCount}/${totalQuestions}.`)) endExam(); }}
+              onClick={() => { if (window.confirm(`Submit? Answered ${answeredCount}/${actualQuestionCount}.`)) endExam(); }}
               className="text-xs text-white rounded px-4 py-1.5 font-medium transition-opacity hover:opacity-90"
               style={{ backgroundColor: themeColor }}
             >
@@ -571,7 +572,7 @@ export default function ExamApp() {
       )}
 
       <div className="h-1 bg-[#e8eaed]">
-        <div className="h-full transition-all duration-300" style={{ backgroundColor: themeColor, width: `${((currentIndex + 1) / totalQuestions) * 100}%` }} />
+        <div className="h-full transition-all duration-300" style={{ backgroundColor: themeColor, width: `${((currentIndex + 1) / actualQuestionCount) * 100}%` }} />
       </div>
 
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
@@ -674,8 +675,8 @@ export default function ExamApp() {
           )}
 
           <button
-            onClick={() => setCurrentIndex(Math.min(totalQuestions - 1, currentIndex + 1))}
-            disabled={currentIndex === totalQuestions - 1}
+            onClick={() => setCurrentIndex(Math.min(actualQuestionCount - 1, currentIndex + 1))}
+            disabled={currentIndex === actualQuestionCount - 1}
             className="flex items-center gap-1.5 text-sm hover:bg-[#f8f9fa] rounded px-3 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             style={{ color: themeColor }}
           >
