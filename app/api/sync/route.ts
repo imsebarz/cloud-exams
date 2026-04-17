@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const code = saveSession(payload);
+    const code = await saveSession(payload);
     return NextResponse.json({ code });
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });

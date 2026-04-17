@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/node": "^25.6.0",
     "@types/react": "^18.3.28",
+    "ioredis": "^5.10.1",
     "lucide-react": "^1.8.0",
     "next": "^14.2.35",
     "react": "^18.3.1",

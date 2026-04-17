@@ -5,7 +5,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { code: string } }
 ) {
-  const session = getSession(params.code);
+  const session = await getSession(params.code);
   if (!session) {
     return NextResponse.json({ error: "Session not found or expired" }, { status: 404 });
   }
