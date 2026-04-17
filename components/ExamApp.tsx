@@ -4,6 +4,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Question, Answer, ExamState, Certification } from "@/lib/types";
 import { certifications } from "@/lib/certifications";
 import type { SyncPayload } from "@/lib/sync";
+import { gcpServices, gcpCategories } from "@/lib/gcp-services";
+import { awsServices, awsCategories } from "@/lib/aws-services";
+import StudyView from "./StudyView";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +23,8 @@ import {
   Trophy,
   Target,
   Cloud,
+  GraduationCap,
+  Layers,
 } from "lucide-react";
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -207,6 +212,11 @@ export default function ExamApp() {
     setState("select");
   }, []);
 
+  const openStudy = useCallback((cert: Certification) => {
+    setActiveCert(cert);
+    setState("study");
+  }, []);
+
   const selectExam = useCallback((examId: string) => {
     setSelectedExamId(examId);
     setState("intro");
@@ -312,6 +322,24 @@ export default function ExamApp() {
   const selectedExam = activeCert?.exams.find((e) => e.id === selectedExamId);
 
   // ══════════════════════════════════════
+  //  STUDY — services cheatsheet
+  // ══════════════════════════════════════
+  if (state === "study" && activeCert) {
+    const isGcp = activeCert.provider === "gcp";
+    return (
+      <StudyView
+        provider={activeCert.provider}
+        providerName={activeCert.provider === "gcp" ? "Google Cloud" : "Amazon Web Services"}
+        themeColor={activeCert.color}
+        bgColor={activeCert.bgColor}
+        services={isGcp ? gcpServices : awsServices}
+        categories={isGcp ? gcpCategories : awsCategories}
+        onBack={() => setState("select")}
+      />
+    );
+  }
+
+  // ══════════════════════════════════════
   //  HOME — certification picker
   // ══════════════════════════════════════
   if (state === "home") {
@@ -329,36 +357,54 @@ export default function ExamApp() {
           <div className="grid gap-4">
             {certifications.map((cert) => {
               const totalQ = cert.exams.reduce((sum, e) => sum + e.questions.length, 0);
+              const serviceCount = cert.provider === "gcp" ? gcpServices.length : awsServices.length;
               return (
-                <button
+                <div
                   key={cert.id}
-                  onClick={() => selectCert(cert)}
-                  className="bg-white border border-[#dadce0] rounded-lg p-6 text-left hover:shadow-lg transition-all group"
+                  className="bg-white border border-[#dadce0] rounded-lg overflow-hidden hover:shadow-lg transition-all"
                   style={{ borderLeftWidth: 4, borderLeftColor: cert.color }}
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="shrink-0">
-                      {cert.provider === "gcp" ? <GCPLogo /> : <AWSLogo />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-lg font-medium text-[#202124]">{cert.name}</h3>
-                        <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: cert.bgColor, color: cert.color }}>
-                          {cert.code}
-                        </span>
+                  <button
+                    onClick={() => selectCert(cert)}
+                    className="w-full p-6 text-left group"
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className="shrink-0">
+                        {cert.provider === "gcp" ? <GCPLogo /> : <AWSLogo />}
                       </div>
-                      <p className="text-sm text-[#5f6368]">
-                        {cert.provider === "gcp" ? "Google Cloud" : "Amazon Web Services"}
-                      </p>
-                      <div className="flex gap-4 mt-2 text-xs text-[#5f6368]">
-                        <span>{cert.exams.length} exams</span>
-                        <span>{totalQ} questions</span>
-                        <span>{cert.duration}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="text-lg font-medium text-[#202124]">{cert.name}</h3>
+                          <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: cert.bgColor, color: cert.color }}>
+                            {cert.code}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#5f6368]">
+                          {cert.provider === "gcp" ? "Google Cloud" : "Amazon Web Services"}
+                        </p>
+                        <div className="flex gap-4 mt-2 text-xs text-[#5f6368]">
+                          <span>{cert.exams.length} exams</span>
+                          <span>{totalQ} questions</span>
+                          <span>{cert.duration}</span>
+                        </div>
                       </div>
+                      <ChevronRight className="w-5 h-5 text-[#dadce0] group-hover:translate-x-1 shrink-0 transition-transform" style={{ color: cert.color }} />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-[#dadce0] group-hover:translate-x-1 shrink-0 transition-transform" style={{ color: cert.color }} />
+                  </button>
+                  <div className="border-t border-[#f1f3f4] px-6 py-2.5 flex items-center justify-between bg-[#fafbfc]">
+                    <span className="text-xs text-[#5f6368] flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5" />
+                      {serviceCount} services cheatsheet
+                    </span>
+                    <button
+                      onClick={() => openStudy(cert)}
+                      className="text-xs font-medium flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors hover:opacity-90"
+                      style={{ backgroundColor: cert.bgColor, color: cert.color }}
+                    >
+                      <GraduationCap className="w-3.5 h-3.5" /> Study
+                    </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -407,14 +453,21 @@ export default function ExamApp() {
             <button onClick={goHome} className="text-sm text-[#5f6368] hover:text-[#202124] flex items-center gap-1 mb-4 transition-colors">
               <ArrowLeft className="w-4 h-4" /> All certifications
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {activeCert.provider === "gcp" ? <GCPLogo /> : <AWSLogo />}
-              <div>
+              <div className="flex-1 min-w-0">
                 <h1 className="text-xl font-semibold text-[#202124]">{activeCert.name}</h1>
                 <p className="text-sm text-[#5f6368]">
                   {activeCert.provider === "gcp" ? "Google Cloud" : "Amazon Web Services"} — {activeCert.code}
                 </p>
               </div>
+              <button
+                onClick={() => setState("study")}
+                className="text-xs font-medium flex items-center gap-1.5 rounded-full px-3.5 py-2 transition-colors hover:opacity-90"
+                style={{ backgroundColor: activeCert.bgColor, color: activeCert.color }}
+              >
+                <GraduationCap className="w-4 h-4" /> Study Cheatsheet
+              </button>
             </div>
           </div>
 

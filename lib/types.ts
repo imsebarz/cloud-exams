@@ -19,7 +19,7 @@ export interface Answer {
   selectedOptions: number[];
 }
 
-export type ExamState = "home" | "select" | "intro" | "exam" | "review" | "results";
+export type ExamState = "home" | "select" | "intro" | "exam" | "review" | "results" | "study";
 
 export interface Certification {
   id: string;
