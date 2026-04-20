@@ -170,14 +170,14 @@ export default function ExamApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (data.code) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.code) {
         setSyncCode(data.code);
       } else {
-        setSyncError("Failed to generate code");
+        setSyncError(data.error || `Failed to generate code (HTTP ${res.status})`);
       }
-    } catch {
-      setSyncError("Network error");
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Network error");
     } finally {
       setSyncLoading(false);
     }
@@ -726,10 +726,14 @@ export default function ExamApp() {
               <button
                 onClick={generateSyncCode}
                 disabled={syncLoading}
-                className="text-xs bg-[#f1f3f4] hover:bg-[#e8eaed] rounded px-3 py-1.5 text-[#3c4043] transition-colors"
-                title="Generate code to continue on another device"
+                className={`text-xs rounded px-3 py-1.5 transition-colors ${
+                  syncError
+                    ? "bg-[#fce8e6] text-[#c5221f] hover:bg-[#fad2cf]"
+                    : "bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed]"
+                }`}
+                title={syncError || "Generate code to continue on another device"}
               >
-                {syncLoading ? "..." : "Sync"}
+                {syncLoading ? "..." : syncError ? "Retry sync" : "Sync"}
               </button>
             )
           )}

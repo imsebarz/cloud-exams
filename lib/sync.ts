@@ -1,21 +1,16 @@
 /**
  * Cross-device session sync store.
  *
- * Why this matters: the previous version used an in-memory Map, which only
- * works when every request lands on the same process. As soon as the app
- * scales to >1 replica (or the single container restarts between a POST and
- * the matching GET), codes written by device A are invisible to device B.
- *
- * Strategy:
- *   - If REDIS_URL is set, persist codes to Redis with a native 24 h TTL.
- *   - Otherwise, fall back to an in-process Map so `next dev` on a single
- *     machine still works without any infrastructure.
+ * In-memory Maps don't survive across replicas / container restarts, so when
+ * REDIS_URL is configured we persist sync codes to Redis with a native 24 h
+ * TTL. If Redis isn't configured (local `next dev`) or becomes unreachable
+ * we degrade to an in-process Map so the feature never hard-fails — a code
+ * generated on device A just won't be findable from device B until Redis
+ * comes back.
  *
  * To enable cross-device sync on Dokploy:
- *   1. Create a Redis service in Dokploy (Services → Create → Redis).
- *   2. In this app's Environment, add REDIS_URL pointing at the Redis
- *      service — e.g. `redis://<redis-service-name>:6379` (Dokploy's
- *      internal network resolves service names).
+ *   1. Services → Create → Redis. Pick any name, e.g. `exams-redis`.
+ *   2. In the app's Environment, set REDIS_URL (e.g. `redis://exams-redis:6379`).
  *   3. Redeploy.
  */
 
@@ -45,19 +40,22 @@ function getRedis(): Redis | null {
     return null;
   }
   redisClient = new Redis(url, {
-    // Keep the API route snappy if Redis is briefly unreachable rather than
-    // queueing connection attempts until the function times out.
-    maxRetriesPerRequest: 2,
-    lazyConnect: false,
+    // Don't queue commands while disconnected — fail fast so we can fall back
+    // to the in-memory store instead of the API route timing out.
+    enableOfflineQueue: false,
+    // Short ceilings so a misconfigured REDIS_URL doesn't freeze the API.
+    connectTimeout: 2000,
+    maxRetriesPerRequest: 1,
+    // Cap reconnect backoff to keep logs sane if the service is flapping.
+    retryStrategy: (times) => Math.min(times * 200, 2000),
   });
   redisClient.on("error", (err) => {
-    // ioredis auto-reconnects; just log so failed sync attempts aren't silent.
     console.error("[sync] Redis error:", err.message);
   });
   return redisClient;
 }
 
-// ── In-memory fallback (single-process dev only) ──
+// ── In-memory fallback ──
 interface StoredSession {
   payload: SyncPayload;
   expiresAt: number;
@@ -70,7 +68,7 @@ function cleanupMemory() {
   }
 }
 
-// ── Code generation (unambiguous alphabet: no 0/O/1/I) ──
+// ── Unambiguous alphabet (no 0/O/1/I) ──
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -80,26 +78,11 @@ function generateCode(): string {
   return code;
 }
 
-/** True when a shared persistent store is configured. */
 export function isPersistentSyncEnabled(): boolean {
   return getRedis() !== null;
 }
 
-export async function saveSession(payload: SyncPayload): Promise<string> {
-  const redis = getRedis();
-  const serialized = JSON.stringify(payload);
-
-  if (redis) {
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = generateCode();
-      // NX = only set if the key does not already exist.
-      // EX = TTL in seconds. Redis atomically handles both in one call.
-      const result = await redis.set(KEY_PREFIX + code, serialized, "EX", TTL_SECONDS, "NX");
-      if (result === "OK") return code;
-    }
-    throw new Error("Could not generate a unique sync code");
-  }
-
+function saveInMemory(payload: SyncPayload): string {
   cleanupMemory();
   let code = generateCode();
   while (memory.has(code)) code = generateCode();
@@ -107,17 +90,42 @@ export async function saveSession(payload: SyncPayload): Promise<string> {
   return code;
 }
 
+export async function saveSession(payload: SyncPayload): Promise<string> {
+  const redis = getRedis();
+  if (!redis) return saveInMemory(payload);
+
+  try {
+    const serialized = JSON.stringify(payload);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = generateCode();
+      const result = await redis.set(KEY_PREFIX + code, serialized, "EX", TTL_SECONDS, "NX");
+      if (result === "OK") return code;
+    }
+    throw new Error("Could not allocate a unique sync code");
+  } catch (err) {
+    console.error("[sync] Redis write failed, falling back to memory:", (err as Error).message);
+    return saveInMemory(payload);
+  }
+}
+
 export async function getSession(code: string): Promise<SyncPayload | null> {
   const normalized = code.toUpperCase().trim();
   const redis = getRedis();
 
   if (redis) {
-    const raw = await redis.get(KEY_PREFIX + normalized);
-    if (!raw) return null;
     try {
-      return JSON.parse(raw) as SyncPayload;
-    } catch {
-      return null;
+      const raw = await redis.get(KEY_PREFIX + normalized);
+      if (raw) {
+        try {
+          return JSON.parse(raw) as SyncPayload;
+        } catch {
+          return null;
+        }
+      }
+      // Not in Redis — fall through to also check memory (e.g. during a
+      // partial outage where the write happened on the in-memory path).
+    } catch (err) {
+      console.error("[sync] Redis read failed, falling back to memory:", (err as Error).message);
     }
   }
 
