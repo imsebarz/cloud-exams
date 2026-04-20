@@ -31,7 +31,10 @@ const TTL_SECONDS = 24 * 60 * 60;
 const KEY_PREFIX = "sync:";
 
 // ── Redis client (lazy singleton) ──
+// Once a connection has irrecoverably failed we set redisClient = null so
+// further calls go straight to the in-memory path and we stop spamming logs.
 let redisClient: Redis | null | undefined;
+const MAX_RECONNECT_ATTEMPTS = 3;
 function getRedis(): Redis | null {
   if (redisClient !== undefined) return redisClient;
   const url = process.env.REDIS_URL;
@@ -39,20 +42,58 @@ function getRedis(): Redis | null {
     redisClient = null;
     return null;
   }
-  redisClient = new Redis(url, {
-    // Don't queue commands while disconnected — fail fast so we can fall back
-    // to the in-memory store instead of the API route timing out.
+
+  // Catch the very common mistake of pointing at the app container itself.
+  // Dokploy / Docker: Redis lives in a sibling service, NOT on localhost.
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      console.warn(
+        `[sync] REDIS_URL points at ${parsed.hostname} — that's this container's own loopback, not the Redis service. ` +
+          `Use the Dokploy service name as the host (e.g. redis://exams-redis:6379). Falling back to in-memory.`
+      );
+      redisClient = null;
+      return null;
+    }
+  } catch {
+    console.warn("[sync] REDIS_URL is not a valid URL — falling back to in-memory.");
+    redisClient = null;
+    return null;
+  }
+
+  const client: Redis = new Redis(url, {
+    // Fail fast instead of queueing commands while disconnected.
     enableOfflineQueue: false,
-    // Short ceilings so a misconfigured REDIS_URL doesn't freeze the API.
     connectTimeout: 2000,
     maxRetriesPerRequest: 1,
-    // Cap reconnect backoff to keep logs sane if the service is flapping.
-    retryStrategy: (times) => Math.min(times * 200, 2000),
+    // After MAX_RECONNECT_ATTEMPTS failures, giving up stops the log flood
+    // and frees the API to use the in-memory fallback permanently.
+    retryStrategy: (times) => {
+      if (times > MAX_RECONNECT_ATTEMPTS) {
+        console.error(
+          `[sync] Giving up on Redis after ${MAX_RECONNECT_ATTEMPTS} failed attempts. ` +
+            "Using in-memory store. Restart the app after fixing REDIS_URL."
+        );
+        // Returning null tells ioredis to stop reconnecting. We also null the
+        // singleton so getRedis() short-circuits on subsequent calls.
+        client.disconnect();
+        redisClient = null;
+        return null;
+      }
+      return Math.min(times * 200, 2000);
+    },
   });
-  redisClient.on("error", (err) => {
+
+  // Log only the first error — reconnection attempts after that are noise.
+  let loggedOnce = false;
+  client.on("error", (err) => {
+    if (loggedOnce) return;
+    loggedOnce = true;
     console.error("[sync] Redis error:", err.message);
   });
-  return redisClient;
+
+  redisClient = client;
+  return client;
 }
 
 // ── In-memory fallback ──
