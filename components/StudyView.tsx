@@ -31,13 +31,12 @@ function ServiceTile({
   return (
     <button
       onClick={onClick}
-      className="group relative bg-white border border-[#dadce0] rounded-lg p-3 text-left hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center gap-2"
-      style={{ minHeight: 120 }}
+      className="group relative bg-white border border-[#dadce0] rounded-lg p-2 sm:p-3 text-left hover:shadow-md active:scale-95 sm:hover:-translate-y-0.5 transition-all flex flex-col items-center gap-1.5 sm:gap-2 min-h-[100px] sm:min-h-[120px]"
     >
       <div
         className={
-          "w-12 h-12 flex items-center justify-center font-bold text-white text-[11px] leading-none shrink-0 " +
-          (provider === "gcp" ? "rounded-[14px]" : "rounded-md")
+          "relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-bold text-white text-[10px] sm:text-[11px] leading-none shrink-0 " +
+          (provider === "gcp" ? "rounded-[12px] sm:rounded-[14px]" : "rounded-md")
         }
         style={{
           background: `linear-gradient(135deg, ${service.color} 0%, ${shade(service.color, -15)} 100%)`,
@@ -47,7 +46,7 @@ function ServiceTile({
       >
         {provider === "aws" && (
           <span className="absolute inset-0 pointer-events-none">
-            <svg className="w-12 h-12" viewBox="0 0 48 48">
+            <svg className="w-full h-full" viewBox="0 0 48 48">
               <path
                 d="M36 4 L44 12 L44 44 L4 44 L4 4 Z"
                 fill="none"
@@ -61,9 +60,9 @@ function ServiceTile({
         )}
         <span className="relative z-10 px-1 text-center">{service.code}</span>
       </div>
-      <div className="text-center">
-        <div className="text-[13px] font-medium text-[#202124] leading-tight line-clamp-2">{service.name}</div>
-        <div className="text-[10px] text-[#5f6368] mt-0.5">{service.category}</div>
+      <div className="text-center w-full">
+        <div className="text-[11px] sm:text-[13px] font-medium text-[#202124] leading-tight line-clamp-2">{service.name}</div>
+        <div className="text-[9px] sm:text-[10px] text-[#5f6368] mt-0.5 truncate">{service.category}</div>
       </div>
     </button>
   );
@@ -275,21 +274,21 @@ export default function StudyView({
         className="sticky top-0 z-20 backdrop-blur border-b border-[#dadce0]"
         style={{ backgroundColor: `${bgColor}dd` }}
       >
-        <div className="max-w-6xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
           <button
             onClick={onBack}
             className="text-sm text-[#5f6368] hover:text-[#202124] flex items-center gap-1 mb-2 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-xl font-semibold text-[#202124]">{providerName} Cheatsheet</h1>
-              <p className="text-sm text-[#5f6368]">
-                {services.length} services · click any tile to see exam tips
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-[#202124] leading-tight">{providerName} Cheatsheet</h1>
+              <p className="text-xs sm:text-sm text-[#5f6368]">
+                {services.length} services · tap any tile for exam tips
               </p>
             </div>
-            <div className="relative flex-1 max-w-xs">
+            <div className="relative w-full sm:flex-1 sm:w-auto sm:max-w-xs">
               <Search className="w-4 h-4 text-[#5f6368] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={query}
@@ -332,21 +331,21 @@ export default function StudyView({
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-[#5f6368] text-sm">
             No services match &ldquo;{query}&rdquo;.
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {grouped.map((g) => (
               <section key={g.category}>
-                <h2 className="text-sm font-semibold text-[#202124] mb-3 flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-[#202124] mb-2.5 sm:mb-3 flex items-center gap-2 sticky top-[9.5rem] sm:static bg-[#f8f9fa]/90 backdrop-blur sm:bg-transparent z-10 py-1">
                   <span className="w-1 h-4 rounded-full" style={{ backgroundColor: themeColor }} />
                   {g.category}
                   <span className="text-xs font-normal text-[#5f6368]">({g.items.length})</span>
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-2.5">
                   {g.items.map((s) => (
                     <ServiceTile
                       key={s.id}

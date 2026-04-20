@@ -344,14 +344,14 @@ export default function ExamApp() {
   // ══════════════════════════════════════
   if (state === "home") {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-white border border-[#dadce0] rounded-full px-4 py-1.5 text-xs text-[#5f6368] mb-5">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-3 sm:p-4">
+        <div className="max-w-2xl w-full py-6 sm:py-0">
+          <div className="text-center mb-6 sm:mb-10">
+            <div className="inline-flex items-center gap-2 bg-white border border-[#dadce0] rounded-full px-3.5 py-1.5 text-xs text-[#5f6368] mb-4 sm:mb-5">
               <Cloud className="w-3.5 h-3.5" /> Cloud Certification Practice
             </div>
-            <h1 className="text-3xl font-semibold text-[#202124] mb-2">Practice Exams</h1>
-            <p className="text-[#5f6368]">Choose a certification to start studying</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#202124] mb-1.5 sm:mb-2">Practice Exams</h1>
+            <p className="text-sm sm:text-base text-[#5f6368]">Choose a certification to start studying</p>
           </div>
 
           <div className="grid gap-4">
@@ -366,23 +366,23 @@ export default function ExamApp() {
                 >
                   <button
                     onClick={() => selectCert(cert)}
-                    className="w-full p-6 text-left group"
+                    className="w-full p-4 sm:p-6 text-left group"
                   >
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-3 sm:gap-5">
                       <div className="shrink-0">
                         {cert.provider === "gcp" ? <GCPLogo /> : <AWSLogo />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="text-lg font-medium text-[#202124]">{cert.name}</h3>
-                          <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: cert.bgColor, color: cert.color }}>
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <h3 className="text-base sm:text-lg font-medium text-[#202124] leading-tight">{cert.name}</h3>
+                          <span className="text-xs font-mono px-2 py-0.5 rounded shrink-0" style={{ backgroundColor: cert.bgColor, color: cert.color }}>
                             {cert.code}
                           </span>
                         </div>
-                        <p className="text-sm text-[#5f6368]">
+                        <p className="text-xs sm:text-sm text-[#5f6368]">
                           {cert.provider === "gcp" ? "Google Cloud" : "Amazon Web Services"}
                         </p>
-                        <div className="flex gap-4 mt-2 text-xs text-[#5f6368]">
+                        <div className="flex gap-3 sm:gap-4 mt-2 text-xs text-[#5f6368] flex-wrap">
                           <span>{cert.exams.length} exams</span>
                           <span>{totalQ} questions</span>
                           <span>{cert.duration}</span>
@@ -391,10 +391,10 @@ export default function ExamApp() {
                       <ChevronRight className="w-5 h-5 text-[#dadce0] group-hover:translate-x-1 shrink-0 transition-transform" style={{ color: cert.color }} />
                     </div>
                   </button>
-                  <div className="border-t border-[#f1f3f4] px-6 py-2.5 flex items-center justify-between bg-[#fafbfc]">
-                    <span className="text-xs text-[#5f6368] flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5" />
-                      {serviceCount} services cheatsheet
+                  <div className="border-t border-[#f1f3f4] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 bg-[#fafbfc]">
+                    <span className="text-xs text-[#5f6368] flex items-center gap-1.5 min-w-0">
+                      <Layers className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{serviceCount} services cheatsheet</span>
                     </span>
                     <button
                       onClick={() => openStudy(cert)}
@@ -410,23 +410,28 @@ export default function ExamApp() {
           </div>
 
           {/* Resume from another device */}
-          <div className="mt-6 bg-white border border-[#dadce0] rounded-lg p-5">
+          <div className="mt-6 bg-white border border-[#dadce0] rounded-lg p-4 sm:p-5">
             <h3 className="text-sm font-medium text-[#202124] mb-3 flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-[#5f6368]" /> Continue on this device
             </h3>
             <div className="flex gap-2">
               <input
                 type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
                 value={syncInput}
                 onChange={(e) => { setSyncInput(e.target.value.toUpperCase()); setSyncError(null); }}
-                placeholder="Enter 6-digit code"
+                onKeyDown={(e) => { if (e.key === "Enter" && syncInput.length === 6) loadFromSyncCode(syncInput); }}
+                placeholder="6-digit code"
                 maxLength={6}
-                className="flex-1 border border-[#dadce0] rounded px-3 py-2 text-sm text-center tracking-[0.3em] font-mono uppercase focus:outline-none focus:border-[#1a73e8]"
+                className="flex-1 min-w-0 border border-[#dadce0] rounded px-2 sm:px-3 py-2 text-sm text-center tracking-[0.2em] sm:tracking-[0.3em] font-mono uppercase focus:outline-none focus:border-[#1a73e8]"
               />
               <button
                 onClick={() => syncInput.length === 6 && loadFromSyncCode(syncInput)}
                 disabled={syncInput.length !== 6 || syncLoading}
-                className="bg-[#1a73e8] text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+                className="shrink-0 bg-[#1a73e8] text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 {syncLoading ? "..." : "Resume"}
               </button>
@@ -447,8 +452,8 @@ export default function ExamApp() {
   // ══════════════════════════════════════
   if (state === "select" && activeCert) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
-        <div className="max-w-3xl w-full">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-start sm:items-center justify-center p-3 sm:p-4">
+        <div className="max-w-3xl w-full py-4 sm:py-0">
           <div className="mb-6">
             <button onClick={goHome} className="text-sm text-[#5f6368] hover:text-[#202124] flex items-center gap-1 mb-4 transition-colors">
               <ArrowLeft className="w-4 h-4" /> All certifications
@@ -463,42 +468,44 @@ export default function ExamApp() {
               </div>
               <button
                 onClick={() => setState("study")}
-                className="text-xs font-medium flex items-center gap-1.5 rounded-full px-3.5 py-2 transition-colors hover:opacity-90"
+                className="text-xs font-medium flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors hover:opacity-90 shrink-0"
                 style={{ backgroundColor: activeCert.bgColor, color: activeCert.color }}
               >
-                <GraduationCap className="w-4 h-4" /> Study Cheatsheet
+                <GraduationCap className="w-4 h-4" />
+                <span className="hidden sm:inline">Study Cheatsheet</span>
+                <span className="sm:hidden">Study</span>
               </button>
             </div>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             {activeCert.exams.map((exam) => (
               <button
                 key={exam.id}
                 onClick={() => selectExam(exam.id)}
-                className="bg-white border border-[#dadce0] rounded-lg p-5 text-left hover:shadow-md transition-all group"
+                className="bg-white border border-[#dadce0] rounded-lg p-4 sm:p-5 text-left hover:shadow-md transition-all group"
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = activeCert.color)}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#dadce0")}
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0 transition-colors"
                     style={{ backgroundColor: activeCert.bgColor }}>
-                    <FileText className="w-6 h-6" style={{ color: activeCert.color }} />
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeCert.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-medium text-[#202124]">{exam.name}</h3>
-                      <span className="text-xs bg-[#f1f3f4] text-[#5f6368] rounded-full px-2 py-0.5">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="text-base font-medium text-[#202124] leading-tight">{exam.name}</h3>
+                      <span className="text-xs bg-[#f1f3f4] text-[#5f6368] rounded-full px-2 py-0.5 shrink-0">
                         {exam.questions.length} questions
                       </span>
                     </div>
                     <p className="text-sm text-[#5f6368]">{exam.description}</p>
-                    <div className="flex gap-4 mt-2 text-xs text-[#5f6368]">
+                    <div className="flex gap-3 sm:gap-4 mt-2 text-xs text-[#5f6368] flex-wrap">
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {activeCert.duration}</span>
                       <span className="flex items-center gap-1"><Target className="w-3 h-3" /> {activeCert.passingScore} to pass</span>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-[#dadce0] shrink-0 mt-3 transition-colors" />
+                  <ChevronRight className="hidden sm:block w-5 h-5 text-[#dadce0] shrink-0 mt-3 transition-colors" />
                 </div>
               </button>
             ))}
@@ -513,15 +520,15 @@ export default function ExamApp() {
   // ══════════════════════════════════════
   if (state === "intro" && activeCert && selectedExam) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-start sm:items-center justify-center p-3 sm:p-4">
+        <div className="max-w-2xl w-full py-4 sm:py-0">
           <div className="bg-white border border-[#dadce0] rounded-lg overflow-hidden">
-            <div className="px-8 py-6" style={{ backgroundColor: themeColor }}>
+            <div className="px-5 sm:px-8 py-5 sm:py-6" style={{ backgroundColor: themeColor }}>
               <button onClick={() => setState("select")} className="text-white/70 hover:text-white text-sm mb-3 flex items-center gap-1 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back to exams
               </button>
               <div className="flex items-center gap-3">
-                <div className="bg-white/20 rounded-lg p-2">
+                <div className="bg-white/20 rounded-lg p-2 shrink-0">
                   {activeCert.provider === "gcp" ? (
                     <svg viewBox="0 0 24 24" className="w-6 h-6">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#fff" fillOpacity="0.8"/>
@@ -533,15 +540,15 @@ export default function ExamApp() {
                     <Cloud className="w-6 h-6 text-white" />
                   )}
                 </div>
-                <div>
-                  <h1 className="text-white text-xl font-semibold">{selectedExam.name}</h1>
-                  <p className="text-white/70 text-sm">{activeCert.name} — {activeCert.code}</p>
+                <div className="min-w-0">
+                  <h1 className="text-white text-lg sm:text-xl font-semibold leading-tight">{selectedExam.name}</h1>
+                  <p className="text-white/70 text-xs sm:text-sm">{activeCert.name} — {activeCert.code}</p>
                 </div>
               </div>
             </div>
 
-            <div className="px-8 py-6 space-y-5">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="px-5 sm:px-8 py-5 sm:py-6 space-y-5">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 text-sm">
                 <div className="bg-[#f8f9fa] rounded px-4 py-3">
                   <span className="text-[#5f6368]">Questions</span>
                   <p className="font-medium text-[#202124] mt-0.5">{activeCert.totalQuestions} multiple choice</p>
@@ -564,9 +571,9 @@ export default function ExamApp() {
                 <h3 className="text-sm font-medium text-[#202124] mb-2">Domains covered</h3>
                 <div className="space-y-1.5 text-sm text-[#5f6368]">
                   {activeCert.domains.map((d, i) => (
-                    <div key={i} className="flex justify-between">
-                      <span>{i + 1}. {d.name}</span>
-                      <span style={{ color: themeColor }}>{d.weight}</span>
+                    <div key={i} className="flex justify-between gap-3">
+                      <span className="min-w-0">{i + 1}. {d.name}</span>
+                      <span className="shrink-0" style={{ color: themeColor }}>{d.weight}</span>
                     </div>
                   ))}
                 </div>
@@ -598,23 +605,28 @@ export default function ExamApp() {
   // ══════════════════════════════════════
   if (state === "results") {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] p-4">
+      <div className="min-h-screen bg-[#f8f9fa] p-3 sm:p-4">
         <div className="max-w-3xl mx-auto space-y-4">
-          <div className={`rounded-lg border px-6 py-5 ${passed ? "bg-[#e6f4ea] border-[#34a853]" : "bg-[#fce8e6] border-[#ea4335]"}`}>
-            <div className="flex items-center gap-4">
-              {passed ? <Trophy className="w-12 h-12 text-[#34a853]" /> : <XCircle className="w-12 h-12 text-[#ea4335]" />}
-              <div>
-                <h1 className="text-xl font-semibold text-[#202124]">
+          <div className={`rounded-lg border px-4 sm:px-6 py-4 sm:py-5 ${passed ? "bg-[#e6f4ea] border-[#34a853]" : "bg-[#fce8e6] border-[#ea4335]"}`}>
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              {passed
+                ? <Trophy className="w-9 h-9 sm:w-12 sm:h-12 shrink-0 text-[#34a853]" />
+                : <XCircle className="w-9 h-9 sm:w-12 sm:h-12 shrink-0 text-[#ea4335]" />}
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold text-[#202124] leading-tight">
                   {passed ? "Congratulations! You passed!" : "You did not pass this time"}
                 </h1>
-                <p className="text-sm text-[#5f6368] mt-1">
-                  {selectedExam?.name} — Score: {score}/{actualQuestionCount} ({percentage}%) — Passing: {activeCert?.passingScore}
+                <p className="text-xs sm:text-sm text-[#5f6368] mt-1">
+                  <span className="block sm:inline truncate">{selectedExam?.name}</span>
+                  <span className="block sm:inline sm:before:content-['_—_']">
+                    Score: <span className="font-medium text-[#202124]">{score}/{actualQuestionCount}</span> ({percentage}%) · Passing: {activeCert?.passingScore}
+                  </span>
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-[#dadce0] rounded-lg p-6">
+          <div className="bg-white border border-[#dadce0] rounded-lg p-4 sm:p-6">
             <h2 className="text-base font-medium text-[#202124] mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5" style={{ color: themeColor }} /> Score by Domain
             </h2>
@@ -623,9 +635,9 @@ export default function ExamApp() {
                 const pct = Math.round((correct / total) * 100);
                 return (
                   <div key={domain}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#3c4043]">{domain}</span>
-                      <span className="font-medium text-[#202124]">{correct}/{total} ({pct}%)</span>
+                    <div className="flex justify-between gap-3 text-sm mb-1">
+                      <span className="text-[#3c4043] min-w-0">{domain}</span>
+                      <span className="font-medium text-[#202124] shrink-0">{correct}/{total} ({pct}%)</span>
                     </div>
                     <div className="h-2 bg-[#e8eaed] rounded-full overflow-hidden">
                       <div
@@ -639,7 +651,7 @@ export default function ExamApp() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={() => { setState("review"); setCurrentIndex(0); setShowExplanation(true); }}
               className="flex-1 bg-white border border-[#dadce0] hover:bg-[#f8f9fa] rounded py-3 px-4 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
@@ -656,9 +668,9 @@ export default function ExamApp() {
             </button>
           </div>
 
-          <div className="bg-white border border-[#dadce0] rounded-lg p-6">
+          <div className="bg-white border border-[#dadce0] rounded-lg p-4 sm:p-6">
             <h2 className="text-base font-medium text-[#202124] mb-3">Question Summary</h2>
-            <div className="grid grid-cols-10 sm:grid-cols-13 gap-2">
+            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-13 gap-1.5 sm:gap-2">
               {examQuestions.map((q, i) => {
                 const correct = isCorrectAnswer(q);
                 const hasAnswer = answers.has(q.id);
@@ -698,69 +710,90 @@ export default function ExamApp() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col">
-      <header className="bg-white border-b border-[#dadce0] px-4 py-2.5 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-[#202124]">
-            {isReview ? "Review Mode" : selectedExam?.name}
-          </span>
-          <span className="text-xs text-[#5f6368] bg-[#f1f3f4] rounded-full px-3 py-1">
-            {currentIndex + 1} / {actualQuestionCount}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          {!isReview && (
-            <div className={`flex items-center gap-1.5 text-sm font-mono ${timeLeft < 300 ? "text-[#ea4335]" : "text-[#5f6368]"}`}>
-              <Clock className="w-4 h-4" />
-              {formatTime(timeLeft)}
-            </div>
-          )}
-          {!isReview && (
-            syncCode ? (
-              <div className="flex items-center gap-1.5 bg-[#e8f0fe] rounded px-3 py-1.5">
-                <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#1a73e8]">{syncCode}</span>
-                <button onClick={() => { navigator.clipboard?.writeText(syncCode); }} className="text-[#1a73e8] hover:text-[#174ea6]">
-                  <FileText className="w-3.5 h-3.5" />
-                </button>
+      <header className="bg-white border-b border-[#dadce0] px-3 sm:px-4 py-2 sticky top-0 z-20">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium text-[#202124] truncate max-w-[12rem] sm:max-w-none">
+              {isReview ? "Review Mode" : selectedExam?.name}
+            </span>
+            <span className="shrink-0 text-xs text-[#5f6368] bg-[#f1f3f4] rounded-full px-2.5 py-1">
+              {currentIndex + 1} / {actualQuestionCount}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+            {!isReview && (
+              <div className={`flex items-center gap-1 text-xs sm:text-sm font-mono ${timeLeft < 300 ? "text-[#ea4335]" : "text-[#5f6368]"}`}>
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {formatTime(timeLeft)}
               </div>
-            ) : (
-              <button
-                onClick={generateSyncCode}
-                disabled={syncLoading}
-                className={`text-xs rounded px-3 py-1.5 transition-colors ${
-                  syncError
-                    ? "bg-[#fce8e6] text-[#c5221f] hover:bg-[#fad2cf]"
-                    : "bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed]"
-                }`}
-                title={syncError || "Generate code to continue on another device"}
-              >
-                {syncLoading ? "..." : syncError ? "Retry sync" : "Sync"}
-              </button>
-            )
-          )}
-          <button onClick={() => setShowNav(!showNav)} className="text-xs bg-[#f1f3f4] hover:bg-[#e8eaed] rounded px-3 py-1.5 text-[#3c4043] transition-colors">
-            Questions
-          </button>
-          {!isReview ? (
+            )}
+            {!isReview && (
+              syncCode ? (
+                <button
+                  onClick={() => navigator.clipboard?.writeText(syncCode)}
+                  className="flex items-center gap-1.5 bg-[#e8f0fe] hover:bg-[#d2e3fc] rounded px-2 py-1 transition-colors"
+                  title="Copy sync code"
+                >
+                  <span className="text-xs font-mono font-bold tracking-[0.15em] text-[#1a73e8]">{syncCode}</span>
+                  <FileText className="w-3.5 h-3.5 text-[#1a73e8]" />
+                </button>
+              ) : (
+                <button
+                  onClick={generateSyncCode}
+                  disabled={syncLoading}
+                  className={`text-xs rounded px-2.5 py-1.5 transition-colors ${
+                    syncError
+                      ? "bg-[#fce8e6] text-[#c5221f] hover:bg-[#fad2cf]"
+                      : "bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed]"
+                  }`}
+                  title={syncError || "Generate code to continue on another device"}
+                  aria-label={syncError ? "Retry sync" : "Sync"}
+                >
+                  {syncLoading ? "..." : syncError ? <span className="hidden sm:inline">Retry sync</span> : <span className="hidden sm:inline">Sync</span>}
+                  {!syncLoading && <RotateCcw className="w-3.5 h-3.5 sm:hidden" />}
+                </button>
+              )
+            )}
             <button
-              onClick={() => { if (window.confirm(`Submit? Answered ${answeredCount}/${actualQuestionCount}.`)) endExam(); }}
-              className="text-xs text-white rounded px-4 py-1.5 font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
+              onClick={() => setShowNav(!showNav)}
+              className="text-xs bg-[#f1f3f4] hover:bg-[#e8eaed] rounded px-2.5 py-1.5 text-[#3c4043] transition-colors flex items-center gap-1"
+              aria-label="Question navigator"
             >
-              Submit
+              <BarChart3 className="w-3.5 h-3.5 sm:hidden" />
+              <span className="hidden sm:inline">Questions</span>
             </button>
-          ) : (
-            <button onClick={() => setState("results")} className="text-xs text-white rounded px-4 py-1.5 font-medium transition-opacity hover:opacity-90" style={{ backgroundColor: themeColor }}>
-              Back to Results
-            </button>
-          )}
+            {!isReview ? (
+              <button
+                onClick={() => { if (window.confirm(`Submit? Answered ${answeredCount}/${actualQuestionCount}.`)) endExam(); }}
+                className="text-xs text-white rounded px-3 sm:px-4 py-1.5 font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: themeColor }}
+              >
+                Submit
+              </button>
+            ) : (
+              <button onClick={() => setState("results")} className="text-xs text-white rounded px-3 py-1.5 font-medium transition-opacity hover:opacity-90" style={{ backgroundColor: themeColor }}>
+                <span className="hidden sm:inline">Back to Results</span>
+                <span className="sm:hidden">Results</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       {showNav && (
-        <div className="fixed inset-0 z-30" onClick={() => setShowNav(false)}>
-          <div className="absolute right-4 top-14 bg-white border border-[#dadce0] rounded-lg shadow-lg p-4 w-80 max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-30 bg-black/30 sm:bg-transparent flex items-end sm:items-start justify-center sm:justify-end"
+          onClick={() => setShowNav(false)}
+        >
+          <div
+            className="w-full sm:w-80 sm:mr-4 sm:mt-14 bg-white border border-[#dadce0] rounded-t-2xl sm:rounded-lg shadow-lg p-4 max-h-[75vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sm:hidden flex justify-center mb-2">
+              <div className="w-10 h-1 rounded-full bg-[#dadce0]" />
+            </div>
             <h3 className="text-sm font-medium text-[#202124] mb-3">Question Navigator</h3>
-            <div className="grid grid-cols-10 gap-1.5">
+            <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5">
               {examQuestions.map((q, i) => {
                 const hasAnswer = answers.has(q.id);
                 const isFlagged = flagged.has(q.id);
@@ -793,25 +826,25 @@ export default function ExamApp() {
         <div className="h-full transition-all duration-300" style={{ backgroundColor: themeColor, width: `${((currentIndex + 1) / actualQuestionCount) * 100}%` }} />
       </div>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="bg-white border border-[#dadce0] rounded-lg overflow-hidden">
-          <div className="bg-[#f8f9fa] px-6 py-2.5 border-b border-[#dadce0] flex items-center justify-between">
-            <span className="text-xs text-[#5f6368]">{currentQuestion.domain}</span>
+          <div className="bg-[#f8f9fa] px-4 sm:px-6 py-2 sm:py-2.5 border-b border-[#dadce0] flex items-center justify-between gap-2">
+            <span className="text-xs text-[#5f6368] truncate min-w-0">{currentQuestion.domain}</span>
             {isMultiple && (
-              <span className="text-xs rounded-full px-2.5 py-0.5 font-medium" style={{ backgroundColor: activeCert?.bgColor, color: themeColor }}>
-                Select {currentQuestion.correctAnswers.length} answers
+              <span className="text-[10px] sm:text-xs rounded-full px-2 sm:px-2.5 py-0.5 font-medium shrink-0" style={{ backgroundColor: activeCert?.bgColor, color: themeColor }}>
+                Select {currentQuestion.correctAnswers.length}
               </span>
             )}
           </div>
 
-          <div className="px-6 py-5">
+          <div className="px-4 sm:px-6 py-4 sm:py-5">
             <p className="text-[15px] text-[#202124] leading-relaxed">
               <span className="font-medium mr-2" style={{ color: themeColor }}>Q{currentIndex + 1}.</span>
               {currentQuestion.text}
             </p>
           </div>
 
-          <div className="px-6 pb-5 space-y-2">
+          <div className="px-3 sm:px-6 pb-4 sm:pb-5 space-y-2">
             {currentQuestion.options.map((option, idx) => {
               const isSelected = currentAnswer?.selectedOptions.includes(idx) ?? false;
               const isCorrectOption = currentQuestion.correctAnswers.includes(idx);
@@ -831,7 +864,7 @@ export default function ExamApp() {
                   key={idx}
                   onClick={() => !isReview && toggleOption(idx)}
                   disabled={isReview}
-                  className={`w-full text-left px-4 py-3.5 rounded border flex items-start gap-3 transition-all ${optionClass}`}
+                  className={`w-full text-left px-3 sm:px-4 py-3 sm:py-3.5 rounded border flex items-start gap-2.5 sm:gap-3 transition-all ${optionClass}`}
                 >
                   <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border mt-0.5 ${
                     isReview
@@ -852,7 +885,7 @@ export default function ExamApp() {
           </div>
 
           {isReview && showExplanation && (
-            <div className="mx-6 mb-5 border rounded p-4" style={{ backgroundColor: activeCert?.lightBg, borderColor: `${themeColor}44` }}>
+            <div className="mx-3 sm:mx-6 mb-4 sm:mb-5 border rounded p-3 sm:p-4" style={{ backgroundColor: activeCert?.lightBg, borderColor: `${themeColor}44` }}>
               <h4 className="text-sm font-medium mb-1.5 flex items-center gap-1.5" style={{ color: themeColor }}>
                 <BookOpen className="w-4 h-4" /> Explanation
               </h4>
@@ -862,40 +895,50 @@ export default function ExamApp() {
         </div>
       </main>
 
-      <footer className="bg-white border-t border-[#dadce0] px-4 py-3 sticky bottom-0">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+      <footer className="bg-white border-t border-[#dadce0] px-2 sm:px-4 py-2.5 sm:py-3 sticky bottom-0">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-1">
           <button
             onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0}
-            className="flex items-center gap-1.5 text-sm hover:bg-[#f8f9fa] rounded px-3 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 text-sm hover:bg-[#f8f9fa] rounded px-2 sm:px-3 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             style={{ color: themeColor }}
           >
-            <ChevronLeft className="w-4 h-4" /> Previous
+            <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Previous</span>
+            <span className="sm:hidden">Prev</span>
           </button>
 
           {!isReview ? (
             <button
               onClick={toggleFlag}
-              className={`flex items-center gap-1.5 text-sm rounded px-3 py-2 transition-colors ${
+              className={`flex items-center gap-1.5 text-sm rounded px-2 sm:px-3 py-2 transition-colors ${
                 flagged.has(currentQuestion.id) ? "text-[#ea8600] bg-[#fef7e0]" : "text-[#5f6368] hover:bg-[#f8f9fa]"
               }`}
+              aria-label={flagged.has(currentQuestion.id) ? "Unflag question" : "Flag for review"}
             >
-              <Flag className="w-4 h-4" /> {flagged.has(currentQuestion.id) ? "Flagged" : "Flag for review"}
+              <Flag className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {flagged.has(currentQuestion.id) ? "Flagged" : "Flag for review"}
+              </span>
+              <span className="sm:hidden">
+                {flagged.has(currentQuestion.id) ? "Flagged" : "Flag"}
+              </span>
             </button>
           ) : (
             <button
               onClick={() => setShowExplanation(!showExplanation)}
-              className="flex items-center gap-1.5 text-sm hover:bg-[#f8f9fa] rounded px-3 py-2 transition-colors"
+              className="flex items-center gap-1.5 text-sm hover:bg-[#f8f9fa] rounded px-2 sm:px-3 py-2 transition-colors"
               style={{ color: themeColor }}
             >
-              <BookOpen className="w-4 h-4" /> {showExplanation ? "Hide" : "Show"} Explanation
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">{showExplanation ? "Hide" : "Show"} Explanation</span>
+              <span className="sm:hidden">{showExplanation ? "Hide" : "Show"}</span>
             </button>
           )}
 
           <button
             onClick={() => setCurrentIndex(Math.min(actualQuestionCount - 1, currentIndex + 1))}
             disabled={currentIndex === actualQuestionCount - 1}
-            className="flex items-center gap-1.5 text-sm hover:bg-[#f8f9fa] rounded px-3 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 text-sm hover:bg-[#f8f9fa] rounded px-2 sm:px-3 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             style={{ color: themeColor }}
           >
             Next <ChevronRight className="w-4 h-4" />

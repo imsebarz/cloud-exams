@@ -1,10 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 // @ts-ignore - CSS imports handled by Next.js
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GCP Associate Cloud Engineer — Practice Exams",
-  description: "Practice exams for the Google Cloud Associate Cloud Engineer certification",
+  title: "Cloud Certification — Practice Exams",
+  description: "Practice exams and study cheatsheets for GCP and AWS cloud certifications",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Lets content extend into the notch / home-indicator area on iOS.
+  viewportFit: "cover",
+  themeColor: "#f8f9fa",
 };
 
 export default function RootLayout({

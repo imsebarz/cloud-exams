@@ -12,4 +12,24 @@ body {
   background: var(--background);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Avoid horizontal scroll from any stray overflow on narrow screens. */
+  overflow-x: hidden;
+}
+
+/* Respect iPhone notch / home-indicator on sticky chrome. */
+header.sticky,
+footer.sticky {
+  padding-left: max(env(safe-area-inset-left), 0.75rem);
+  padding-right: max(env(safe-area-inset-right), 0.75rem);
+}
+footer.sticky {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.625rem);
+}
+
+/* Hide horizontal scrollbar on category chip row (Chrome + Firefox). */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
