@@ -47,6 +47,8 @@ The tests start an isolated production server, disable Redis for that child proc
 
 The versioned Dockerfile builds a standalone Next.js server with Node 22.23.4 pinned by digest. It runs as the Node user and excludes local environment files from the build context. Before deployment, select Dockerfile as the application's build type in Dokploy; the existing Nixpacks deployment will not automatically use this recipe. Keep the existing REDIS_URL runtime setting. The application listens on port 3000.
 
+The runtime image starts Node directly and excludes the upstream npm, Corepack and Yarn installations. Package managers remain available in the builder.
+
 Build and inspect the candidate before scheduling a production restart:
 
 ```sh
