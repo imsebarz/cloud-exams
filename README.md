@@ -29,8 +29,28 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Validate the security update
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Use Node 22.23.4 or a patched Node 24 release (24.22.1 or later).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sh
+npm ci
+npm run lint
+npm run build
+npm test
+npm audit
+```
+
+The tests start an isolated production server, disable Redis for that child process and verify the existing in-memory sync contract, malformed requests and normalized codes. They do not verify persistence against a real Redis service.
+
+## Dokploy deployment
+
+The versioned Dockerfile builds a standalone Next.js server with Node 22.23.4 pinned by digest. It runs as the Node user and excludes local environment files from the build context. Before deployment, select Dockerfile as the application's build type in Dokploy; the existing Nixpacks deployment will not automatically use this recipe. Keep the existing REDIS_URL runtime setting. The application listens on port 3000.
+
+Build and inspect the candidate before scheduling a production restart:
+
+```sh
+docker build -t cloud-exams-security-candidate .
+```
+
+The pull-request workflow validates the Node 22 build, lint, HTTP tests, dependency audit and Docker image build. A successful workflow does not deploy the application.

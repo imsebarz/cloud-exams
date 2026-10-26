@@ -2,24 +2,31 @@
   "name": "gcp-ace-exam",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "test": "node --test tests/sync-api.test.mjs"
   },
   "dependencies": {
-    "@types/node": "^25.6.0",
-    "@types/react": "^18.3.28",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "ioredis": "^5.10.1",
     "lucide-react": "^1.8.0",
-    "next": "^14.2.35",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "^16.4.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "tailwindcss": "^3.4.19",
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "eslint": "^9.39.4",
+    "eslint-config-next": "16.2.9",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.19"
