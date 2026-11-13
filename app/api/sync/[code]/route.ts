@@ -3,9 +3,10 @@ import { getSession } from "@/lib/sync";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
-  const session = await getSession(params.code);
+  const { code } = await params;
+  const session = await getSession(code);
   if (!session) {
     return NextResponse.json({ error: "Session not found or expired" }, { status: 404 });
   }
